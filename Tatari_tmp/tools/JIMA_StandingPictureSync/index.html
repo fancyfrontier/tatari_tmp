@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>JIMA 立繪清單同步</title>
+  <style>
+    :root { color-scheme: light; font-family: "Microsoft JhengHei", system-ui, sans-serif; color: #20344b; background: #f3f6fb; }
+    body { max-width: 700px; margin: 32px auto; padding: 0 22px; }
+    h1 { font-size: 23px; margin-bottom: 10px; }
+    p, li { line-height: 1.75; }
+    .card { background: white; border: 1px solid #d4dfec; border-radius: 10px; padding: 20px; margin: 18px 0; }
+    button { border: 1px solid #1967ad; border-radius: 6px; background: #1967ad; color: white; padding: 10px 14px; margin: 4px 8px 4px 0; cursor: pointer; font: inherit; }
+    button:disabled { opacity: .5; cursor: default; }
+    button.secondary { background: white; color: #1967ad; }
+    #status { font-weight: 600; overflow-wrap: anywhere; }
+    #detail { margin-bottom: 0; color: #54677d; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #ids { padding-left: 24px; max-height: 240px; overflow: auto; }
+    #ids:empty { display: none; }
+    code { background: #eaf0f8; padding: 1px 4px; border-radius: 3px; }
+    .error { color: #a12d32; }
+  </style>
+  <script src="sync-core.js" defer></script>
+  <script src="sync-app.js" defer></script>
+</head>
+<body>
+  <h1>JIMA 立繪清單同步</h1>
+  <p>編輯前開啟一次，選擇包含 <code>game.rmmzproject</code> 的專案資料夾。保留此視窗，之後儲存立繪設定便會自動同步事件下拉選項。</p>
+  <div class="card">
+    <button id="choose" type="button">選擇專案並開始同步</button>
+    <button id="toggle" type="button" class="secondary" disabled>停止同步</button>
+    <button id="sync" type="button" class="secondary" disabled>立即檢查</button>
+    <p id="status" role="status" aria-live="polite">尚未選擇專案</p>
+    <p id="detail">請使用 Microsoft Edge 或 Google Chrome。</p>
+    <ul id="ids" aria-label="已同步的立繪檔名"></ul>
+  </div>
+  <div class="card">
+    <ol>
+      <li>在插件的「立繪個別樣式」新增、移除或換圖，逐層按「確定」，再按 <strong>Ctrl+S 儲存專案</strong>。</li>
+      <li>此視窗會顯示同步結果；只列出已登錄的立繪，不會把資料夾內其他圖片加入清單。</li>
+      <li>回到 MZ 插件管理器，對 <code>Jima_StandingPicture</code> 按右鍵選「重新整理／Refresh」，關閉並重新開啟插件命令參數視窗。</li>
+    </ol>
+    <p>若 MZ 仍顯示舊選項，儲存後重新開啟專案。未開此工具時，本機試玩啟動會補同步一次；之後仍需讓 MZ 重新讀取選項。</p>
+  </div>
+</body>
+</html>

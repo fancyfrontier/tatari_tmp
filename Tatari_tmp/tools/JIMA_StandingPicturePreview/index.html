@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>JIMA 立繪預覽</title>
+  <style id="appStyles">
+    *{box-sizing:border-box}
+    :root{font-family:"Microsoft JhengHei","Noto Sans CJK TC",system-ui,sans-serif;color:#233341;background:#edf1f5;font-size:14px}
+    body{margin:0;min-width:360px;height:100vh;height:100dvh;overflow:hidden}
+    button,input,select{font:inherit}
+    button{cursor:pointer;border:1px solid #c5cfd9;border-radius:7px;background:#fff;color:#233341;padding:7px 11px;white-space:nowrap}
+    button:hover{background:#edf4fc;border-color:#6e9cca}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #73b4f4;outline-offset:1px}
+    button:disabled{cursor:default;opacity:.5}
+    .primary{background:#1768b3;color:#fff;border-color:#1768b3}.primary:hover{background:#0d5598;color:#fff}
+    #app{height:100%;display:grid;grid-template-rows:auto auto auto 1fr auto;background:#edf1f5;min-height:0}
+    header{grid-row:1;background:#16334c;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+    .brand{font-size:17px;font-weight:700;letter-spacing:.04em}
+    .subtitle{font-size:11px;opacity:.72;margin-top:3px}
+    .headerActions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+    .headerActions button{font-size:13px}
+    #syncBar{grid-row:2;padding:8px 12px;background:#e7f1fc;border-bottom:1px solid #bdd2e7;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+    #syncBar[hidden]{display:none}
+    #syncBar button{font-size:12px;padding:5px 9px}
+    #syncStatus{flex:1;min-width:180px;font-size:12px;line-height:1.6;color:#16466f}
+    #syncDetails{width:100%;font-size:11px;color:#64778a;overflow-wrap:anywhere}
+    #notice{grid-row:3;padding:8px 14px;color:#6d4806;background:#fff3d6;border-bottom:1px solid #e7d7ab;font-size:12px;max-height:86px;overflow:auto;white-space:pre-line}
+    #notice[hidden]{display:none}
+    .workspace{grid-row:4;display:grid;grid-template-columns:minmax(160px,26%) 1fr;min-height:0;overflow:hidden}
+    aside{background:#fff;border-right:1px solid #d6dfe8;display:grid;grid-template-rows:auto auto 1fr;min-height:0}
+    .searchBox{padding:12px 10px 7px}
+    #search{width:100%;border:1px solid #c5cfd9;border-radius:7px;padding:8px 9px;min-width:0}
+    #count{font-size:11px;color:#65778a;padding:0 12px 8px}
+    #pictureList{overflow:auto;padding:0 6px 8px;min-height:0}
+    .pictureRow{display:block;width:100%;border:1px solid transparent;text-align:left;border-radius:6px;padding:9px 8px;margin:2px 0;white-space:normal;background:transparent}
+    .pictureRow strong{display:block;font-size:13px;overflow-wrap:anywhere}
+    .pictureRow small{display:block;color:#728294;font-size:11px;margin-top:4px;overflow-wrap:anywhere;line-height:1.3}
+    .pictureRow[aria-selected="true"]{background:#e7f1fc;border-color:#aac9e9;color:#0c559a}
+    .emptyList{font-size:12px;color:#718194;padding:18px 9px;line-height:1.7}
+    main{min-width:0;min-height:0;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+    .imageHeading{padding:10px 14px 8px;background:#f8fafc;border-bottom:1px solid #d6dfe8;min-width:0}
+    #selectedId{font-weight:700;overflow-wrap:anywhere}
+    #imageMeta{font-size:11px;color:#6d7e90;line-height:1.5;overflow-wrap:anywhere;margin-top:3px}
+    #stage{position:relative;min-height:0;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:14px;
+      background-color:#dce3ea;background-image:linear-gradient(45deg,#cbd4de 25%,transparent 25%),linear-gradient(-45deg,#cbd4de 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#cbd4de 75%),linear-gradient(-45deg,transparent 75%,#cbd4de 75%);
+      background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+    #stage[data-background="dark"]{background:#253340}
+    #stage[data-background="light"]{background:#fff}
+    #stage canvas{display:block;flex:none}
+    #emptyPreview{white-space:pre-line;text-align:center;max-width:360px;line-height:1.8;font-size:13px;color:#43576a;padding:16px;background:rgba(255,255,255,.85);border-radius:9px}
+    #stage[data-background="dark"] #emptyPreview{color:#d9e4ee;background:rgba(0,0,0,.3)}
+    .controls{padding:10px 13px;background:#f8fafc;border-top:1px solid #d6dfe8}
+    .controlTop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .segmented{display:flex;gap:5px}.segmented button{font-size:12px;padding:5px 10px}
+    .segmented button[aria-pressed="true"]{background:#e3eef9;color:#0b579c;border-color:#8eb3d9}
+    .backgroundLabel{font-size:11px;color:#6d7e90;display:flex;align-items:center;gap:5px}
+    #background{font-size:12px;border:1px solid #c5cfd9;border-radius:5px;padding:4px;background:#fff}
+    .sliders{margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .sliderLabel{font-size:11px;color:#667a8d;display:flex;justify-content:space-between}
+    input[type="range"]{width:100%;accent-color:#1768b3;height:17px;margin:3px 0 0}
+    .copyArea{grid-row:5;border-top:1px solid #cbd6e1;padding:10px 14px 8px;background:#fff}
+    .copyRow{display:flex;gap:7px}
+    #idOutput{border:1px solid #c5cfd9;background:#f6f8fb;border-radius:6px;padding:7px 9px;flex:1;min-width:0;color:#174c78}
+    #copyStatus{font-size:12px;min-height:19px;margin-top:6px;color:#286446;overflow-wrap:anywhere}
+    .hint{font-size:11px;line-height:1.5;color:#7a8999}
+    #floatingNotice{display:none;max-width:520px;margin:12vh auto;padding:30px;background:white;border:1px solid #d0dbe5;border-radius:12px;line-height:1.9}
+    #floatingNotice h1{font-size:21px;margin:0 0 12px}
+    body[data-floating="true"] #floatingNotice{display:block}
+    @media(max-width:600px){header{padding:9px 10px;gap:5px}.brand{font-size:14px}.subtitle{display:none}.headerActions{gap:4px}.headerActions button{font-size:11px;padding:6px}
+      .workspace{grid-template-columns:145px 1fr}.imageHeading{padding:8px}.controls{padding:8px}.copyArea{padding:8px}.hint{font-size:10px}.sliders{gap:7px}
+      .backgroundLabel span{display:none}}
+    @media(max-height:550px){header{padding-top:7px;padding-bottom:7px}.controls{padding-top:6px;padding-bottom:6px}.imageHeading{padding-top:6px;padding-bottom:6px}.copyArea{padding-top:6px;padding-bottom:5px}.subtitle,.hint{display:none}.sliders{margin-top:5px}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div><div class="brand">JIMA 立繪預覽</div><div class="subtitle">選角色，也看得到表情　·　v0.4.0 已登錄清單與滑鼠同步預覽</div></div>
+      <div class="headerActions">
+        <button id="refresh" title="在 MZ 儲存清單後，重新讀取">重新整理</button>
+        <button id="float" class="primary" title="開啟可拖動、可調整大小的置頂視窗">浮動置頂</button>
+      </div>
+    </header>
+    <div id="syncBar" hidden>
+      <div id="syncStatus" role="status">正在連接同步程式…</div>
+      <button id="syncBind">綁定 MZ（8 秒）</button>
+      <button id="syncFollow" aria-pressed="true">跟隨：開</button>
+      <div id="syncDetails"></div>
+    </div>
+    <div id="notice" role="status" hidden></div>
+    <div class="workspace">
+      <aside>
+        <div class="searchBox"><input id="search" type="search" placeholder="搜尋 ID 或圖片名稱" aria-label="搜尋立繪"></div>
+        <div id="count">讀取清單中…</div>
+        <div id="pictureList" role="listbox" aria-label="立繪 ID 清單"></div>
+      </aside>
+      <main>
+        <div class="imageHeading"><div id="selectedId">選擇立繪</div><div id="imageMeta">滑過左側 ID 查看圖片，點一下即可複製 ID。</div></div>
+        <div id="stage" data-background="checker"><div id="emptyPreview">正在讀取專案已儲存的立繪清單…</div></div>
+        <div class="controls">
+          <div class="controlTop">
+            <div class="segmented" role="group" aria-label="預覽範圍">
+              <button id="upper" aria-pressed="true">上半身</button><button id="full" aria-pressed="false">全圖</button>
+            </div>
+            <label class="backgroundLabel"><span>背景</span><select id="background" aria-label="預覽背景"><option value="checker">透明格</option><option value="dark">深色</option><option value="light">白色</option></select></label>
+          </div>
+          <div class="sliders">
+            <label><span class="sliderLabel">顯示原圖高度 <output id="extentValue">58%</output></span><input id="extent" type="range" min="35" max="100" value="58" aria-label="顯示原圖高度"></label>
+            <label><span class="sliderLabel">預覽向下移動 <output id="topValue">0%</output></span><input id="cropTop" type="range" min="0" max="42" value="0" aria-label="預覽向下移動"></label>
+          </div>
+        </div>
+      </main>
+    </div>
+    <footer class="copyArea">
+      <div class="copyRow"><input id="idOutput" readonly placeholder="選取後顯示立繪 ID" aria-label="可複製的立繪 ID"><button id="copy" class="primary" disabled>複製 ID</button></div>
+      <div id="copyStatus" role="status" aria-live="polite"></div>
+      <div class="hint">在 MZ 的立繪 ID 參數切換到「文字」，按 Ctrl+V。預覽最大 816×624，原圖保持原樣。</div>
+    </footer>
+  </div>
+  <section id="floatingNotice">
+    <h1>立繪預覽已移到浮動視窗</h1>
+    <p>可以拖動浮動視窗的標題列、拉動邊框調整大小，並在 MZ 旁邊選取立繪。</p>
+    <p>請保留這個來源分頁；關閉來源分頁也會關閉浮動視窗。</p>
+    <button id="return" class="primary">返回一般視窗</button>
+  </section>
+  <script src="preview-core.js"></script>
+  <script src="preview-app.js"></script>
+</body>
+</html>

@@ -28,5 +28,6 @@ null,
 {"id":26,"expanded":false,"name":"map003_7F梯廳_多測開關","order":24,"parentId":24,"scrollX":0,"scrollY":0,"quick":false},
 {"id":27,"expanded":false,"name":"map004_公司樓梯","order":25,"parentId":17,"scrollX":0,"scrollY":0,"quick":false},
 {"id":28,"expanded":false,"name":"map004_公司樓梯_6F","order":26,"parentId":27,"scrollX":0,"scrollY":0,"quick":false},
-{"id":29,"expanded":false,"name":"map004_公司樓梯_7F","order":27,"parentId":27,"scrollX":0,"scrollY":0,"quick":false}
+{"id":29,"expanded":false,"name":"map004_公司樓梯_7F","order":27,"parentId":27,"scrollX":0,"scrollY":0,"quick":false},
+{"id":30,"expanded":false,"name":"立繪測試","order":30,"parentId":19,"scrollX":0,"scrollY":0,"quick":false}
 ]
