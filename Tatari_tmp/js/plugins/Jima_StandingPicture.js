@@ -1,7 +1,7 @@
 //=============================================================================
-// RPG Maker MZ - Jima_StandingPicture.js v1.6.0
+// RPG Maker MZ - Jima_StandingPicture.js v1.7.1
 // Modified edition by Jima; based on LL_StandingPicture.js v2.7.0 by Lulu's Church.
-// Jima Renamed Edition v1.6.0 (2026-11-21), includes shared slots, FocusKeep and motion target fixes.
+// Jima Compact Edition v1.7.1 (2026-11-22), retains legacy commands and saved parameters.
 //-----------------------------------------------------------------------------
 // ルルの教会 (Lulu's Church)
 // https://nine-yusha.com/
@@ -12,7 +12,7 @@
 
 /*:
  * @target MZ
- * @plugindesc [Jima v1.6.0] 立繪選單、多人聚焦、批次登錄與共用縮放。
+ * @plugindesc [Jima v1.7.1] 精簡立繪指令、多人聚焦、批次登錄與共用縮放。
  * @author Jima
  * @url https://nine-yusha.com/plugin-spicture/
  *
@@ -21,10 +21,24 @@
  *
  * @help Jima_StandingPicture.js
  * 
- * Jima 立繪操作介面 v1.6.0（2026-11-21）
+ * Jima 立繪操作介面 v1.7.1（2026-11-22）
  * 位置 1～8 各自設定共用的水平、垂直座標，所有立繪依呼叫位置定位。
  * 沿用發言聚焦保留與動作僅影響指定位置的修正。
  * 
+ * 【首次開啟結構參數修正 v1.7.1】
+ * 立繪設定的預設值與保留選項改用不含註解標記符號的值，避免預設資料被截斷。
+ * 新指令保留完整預設資料；既有完整設定與舊的保留值仍可執行。
+ * 舊事件若已儲存不完整的設定，請切換文字／結構後按確定儲存一次，或重新建立該指令。
+ * 本次修正不需執行 CMD；同步工具已一併修正，避免之後同步還原成舊值。
+ *
+ * 【精簡事件顯示 v1.7.0】
+ * 新增事件請選「顯示／切換立繪（精簡）」，再點開「立繪設定」。
+ * 立繪、位置、聚焦、額外聚焦、保留、先退場與動作全保留在這一層。
+ * 事件清單只顯示指令標題及一列設定；精簡顯示不需執行 CMD。
+ * 原有事件使用的舊版展開指令繼續支援，不會自動更換或重設原參數。
+ * 舊事件若也要精簡，請重新建立精簡指令，確認設定後再刪除原指令。
+ * 已登錄立繪的選項同步與即時預覽沿用既有方式。
+ *
  * 【插件更名 v1.6.0】
  * 本客製版作者顯示為 Jima，插件檔名為 Jima_StandingPicture.js。
  * 以 Lulu's Church 的 LL_StandingPicture.js v2.7.0 為基礎修改，保留原始來源與規約註記。
@@ -83,7 +97,7 @@
  * 【已登錄立繪下拉選單】
  * 在「立繪個別樣式」從 img/pictures/jima_tool 選擇 PNG 並設定樣式。
  * 圖片 ID 直接使用檔名，不含最後的 .png；不必另外輸入 ID。
- * 事件請選「顯示／切換立繪（已登錄清單）」。
+ * 事件請選「顯示／切換立繪（精簡）」，再開啟「立繪設定」。
  * 下拉選單只列出已登錄的圖片，並套用該筆縮放、原點與眨眼等設定。
  * 資料夾內未登錄的圖片不會自動加入；空白登錄列不列出。
  * 新增、移除或修改登錄後，逐層按確定，再 Ctrl+S 儲存專案。
@@ -110,7 +124,7 @@
  * 只有本機試玩會轉換；正式遊戲與網頁版僅讀取設定，不改寫檔案。
  *
  * 【用插件指令安排對話】
- * 在事件的「插件命令」選擇「顯示／切換立繪（已登錄清單）」：
+ * 在事件的「插件命令」選擇「顯示／切換立繪（精簡）」並開啟「立繪設定」：
  * ・立繪圖片：從下拉選單選擇已登錄的圖片（檔名即 ID）。
  * ・顯示位置：選擇位置 1～8。
  * ・顯示立繪：開啟時顯示；關閉時只讓該位置退場。
@@ -191,9 +205,19 @@
  * 規約網址：https://nine-yusha.com/plugin/
  * 
  *
+ * @command showPictureCompactGui
+ * @text 顯示／切換立繪（精簡）
+ * @desc 點開「立繪設定」調整全部選項；事件清單只顯示指令及一列設定。
+ *
+ * @arg settings
+ * @text 立繪設定
+ * @desc 點開後選擇已登錄立繪、位置、聚焦、保留、先退場及動作。
+ * @type struct<standingCommandSettings>
+ * @default {"imageName":"jima-keep-current","slot":"1","show":"true","focus":"true","extraFocusSlots":"[]","hold":"true","exitBeforeShow":"false","motionEnabled":"false","motion":"jump"}
+ *
  * @command showPictureGui
- * @text 顯示／切換立繪（已登錄清單）
- * @desc 從已登錄的個別樣式清單選擇立繪，設定位置、發言、保留與動作。
+ * @text 顯示／切換立繪（舊版展開）
+ * @desc 相容既有事件，維持原本逐項展開。新增事件建議使用「顯示／切換立繪（精簡）」。
  *
  * @arg imageName
  * @text 立繪圖片（已登錄清單）
@@ -201,7 +225,7 @@
  * @type select
  * @jimaPictureOptionsBegin
  * @option （維持此位置目前圖片；首次請選立繪）
- * @value @keep
+ * @value jima-keep-current
  * @option Asai_CloseEyes_30
  * @value jima-id:Asai_CloseEyes_30
  * @option Asai_Cold_30
@@ -355,7 +379,7 @@
  * @option 0_0_C_XD_V_30
  * @value jima-id:0_0_C_XD_V_30
  * @jimaPictureOptionsEnd
- * @default @keep
+ * @default jima-keep-current
  *
  * @arg slot
  * @text 顯示位置
@@ -1240,324 +1264,14 @@
  * @off 關閉：需要時載入
  */
 
-/*~struct~sPictures:
- *
+/*~struct~standingCommandSettings:
  * @param imageName
- * @text 立繪圖片（檔名即 ID）
- * @desc 直接從 img/pictures/jima_tool 選 PNG，檔名自動作為 ID。
- * @type file
- * @dir img/pictures/jima_tool
- *
- * @param imageNameBlink
- * @text 眨眼圖片 1（選填）
- * @desc 選擇第一張眨眼差分圖片；尺寸須與立繪圖片相同，不使用眨眼時請留空。
- * @dir img/pictures/jima_tool
- * @type file
- * @require 1
- *
- * @param imageNameBlink2
- * @text 眨眼圖片 2（選填）
- * @desc 選擇第二張眨眼差分圖片；尺寸須與立繪圖片相同，只用一張差分時請留空。
- * @dir img/pictures/jima_tool
- * @type file
- * @require 1
- *
- * @param origin
- * @text 定位原點
- * @desc 指定座標對齊圖片的左上角或中心；放大、縮小時也會依此定位。
- * @default 0
- * @type select
- * @option 左上角
- * @value 0
- * @option 圖片中心
- * @value 1
- *
- * @param reverse
- * @text 偶數位置的左右翻轉
- * @desc 位置 2、4、6、8 使用此設定；選擇是否將立繪左右翻轉。
- * @default 1
- * @type select
- * @option 維持原方向
- * @value 1
- * @option 左右翻轉
- * @value -1
- *
- * @param useGlobalScale
- * @text 是否共用外部縮放比
- * @desc 是：使用外部的所有立繪共用縮放比；否：使用下方本筆水平、垂直縮放。個別數值不會被清除。
- * @type boolean
- * @on 是：使用共用縮放
- * @off 否：使用本筆縮放
- * @default true
- *
- * @param scaleX
- * @text 水平縮放（％）
- * @desc 是否共用外部縮放比設為否時生效；100 為原尺寸、150 為 1.5 倍、200 為 2 倍。
- * @default 100
- * @min -2000
- * @max 2000
- * @type number
- *
- * @param scaleY
- * @text 垂直縮放（％）
- * @desc 是否共用外部縮放比設為否時生效；100 為原尺寸、150 為 1.5 倍、200 為 2 倍。
- * @default 100
- * @min -2000
- * @max 2000
- * @type number
- *
- * @param opacity
- * @text 不透明度
- * @desc 範圍 0～255；0 完全透明、255 完全不透明。使用眨眼圖片時請設為 255。
- * @default 255
- * @type number
- * @min 0
- * @max 255
- *
- * @param blendMode
- * @text 混合模式
- * @desc 設定立繪與下方畫面的顏色混合方式；一般立繪使用「一般」。
- * @default 0
- * @type select
- * @option 一般
- * @value 0
- * @option 加法混合（提亮）
- * @value 1
- * @option 色彩增值（變暗）
- * @value 2
- * @option 濾色（提亮）
- * @value 3
- */
-
-/*~struct~pictureSettings:
- *
- * @param transition
- * @text 進退場效果
- * @desc 設定此位置的立繪出現與消失時使用的效果。
- * @type select
- * @default 1
- * @option 無效果（立即顯示／隱藏）
- * @value 0
- * @option 淡入／淡出
- * @value 1
- * @option 從左側滑入／往左側退場
- * @value 2
- * @option 從右側滑入／往右側退場
- * @value 3
- * @option 從下方滑入／往下方退場
- * @value 4
- * @option 從上方滑入／往上方退場
- * @value 5
- *
- * @param priority
- * @text 顯示層級
- * @desc 設定立繪相對於一般圖片與視窗的前後順序。
- * @type select
- * @default inFrontOfPicture
- * @option 一般圖片後方
- * @value behindPicture
- * @option 插入一般圖片之間
- * @value betweenPictures
- * @option 一般圖片前方
- * @value inFrontOfPicture
- * @option 視窗後方（畫面淡出時仍顯示）
- * @value behindWindow
- * @option 視窗前方（畫面淡出時仍顯示）
- * @value inFrontOfWindow
- */
-
-/*:ja
- * @target MZ
- * @plugindesc [Jima v1.6.0] 立繪選單、多人聚焦、批次登錄與共用縮放。
- * @author Jima
- * @url https://nine-yusha.com/plugin-spicture/
- *
- * @jimaAssetsBegin
- * @jimaAssetsEnd
- *
- * @help Jima_StandingPicture.js
- * 
- * Jima 立繪操作介面 v1.6.0（2026-11-21）
- * 位置 1～8 各自設定共用的水平、垂直座標，所有立繪依呼叫位置定位。
- * 沿用發言聚焦保留與動作僅影響指定位置的修正。
- * 
- * 【插件更名 v1.6.0】
- * 本客製版作者顯示為 Jima，插件檔名為 Jima_StandingPicture.js。
- * 以 Lulu's Church 的 LL_StandingPicture.js v2.7.0 為基礎修改，保留原始來源與規約註記。
- * 儲存並關閉 MZ，覆蓋此包後，執行 JIMA_StandingPictureRegisterSync.cmd。
- * 工具會保留原插件設定，改用新名稱，並更新地圖、公共事件、戰鬥事件的插件呼叫名稱。
- * 只更換插件名稱，不變更立繪 ID、台詞或其他事件指令；完成後重開專案。
- * 舊存檔的內部立繪欄位與舊呼叫別名會保留，不需重建事件。
- * 請只啟用 Jima_StandingPicture，不要另行啟用原版 LL_StandingPicture。
- *
- * 【多人同時發言聚焦 v1.5.0】
- * 在「顯示／切換立繪」開啟「此角色發言聚焦」，並於
- * 「額外一起聚焦的位置」逐筆選取其他位置 1～8。
- * 例如呼叫位置 3、額外選位置 1，位置 1 與 3 會同時恢復正常亮度與大小。
- * 未選的位置會變暗；若已開啟未發言角色縮小，也會依設定縮小。
- * 大小以共用／個別縮放為基準，時間沿用「聚焦變化時間（幀）」。
- * 額外位置的立繪請先顯示並保留；此欄位只設定其聚焦，不切圖或重播動作。
- * 每次呼叫都重新指定整組聚焦；下一句只由一人說話時，額外清單留空。
- * 在保留模式下，後續純文字台詞會沿用這組聚焦，直到下一次指定。
- * 此角色發言聚焦關閉時維持全員明亮，忽略額外清單；隱藏指令也忽略此欄位。
- * 舊事件沒有此欄位時視為空清單，維持原本單人聚焦。
- *
- * 【批次登錄與共用縮放 v1.4.0】
- * 儲存並關閉 MZ 與清單同步工具後，執行專案根目錄的
- * JIMA_StandingPictureRegisterSync.cmd。
- * 固定讀取 img/pictures/jima_tool 這一層的 PNG，不包含子資料夾。
- * 同名圖片保留全部既有設定；新增圖使用預設值；缺圖的登錄會移除。
- * 目錄不存在、沒有 PNG 或讀取失敗時停止，不改寫既有清單。
- * 批次程式同時更新事件下拉選項，不建立備份，也不修改舊事件指向。
- * 完成後重開專案；手動登錄的同步方式與即時預覽沿用原有工具。
- *
- * 「所有立繪共用縮放比（%）」預設 100，水平、垂直使用相同百分比。
- * 每筆立繪的「是否共用外部縮放比」預設是，包含未填此欄位的舊立繪。
- * 共用時直接使用外部數值，不與個別縮放相乘；原本個別數值仍保留。
- * 改成否後，才使用該筆的水平、垂直縮放。
- * 未發言縮小效果會在所選的共用／個別基準上套用，恢復時也回到此基準。
- *
- * 【換人進退場 v1.3.0】
- * 在「顯示／切換立繪」開啟「更換前先退場」，目前位置有人時，
- * 會讓原立繪退場，等待插件設定的幀數後，再讓新立繪進場。
- * 「更換前退場等待（幀）」預設 20；事件會自動等待，不需另外加等待指令。
- * 首次顯示或目前位置已完全隱藏時直接進場。
- * 此開關由每句指令自行決定：換表情關閉，換角色時開啟。
- * 即使圖片相同，開啟也會重新進場；不會用檔名猜測角色身分。
- * 等待值控制新圖開始顯示的時機；原本進退場速度不變。
- * 若設定少於原退場時間，會在等待結束時結束退場；0 為立即重新進場。
- *
- * 【未發言角色縮小 v1.3.0】
- * 插件設定的「未發言角色縮小」預設關閉，開啟後套用縮放與明暗動畫。
- * 「未發言縮小幅度（%）」預設 10，表示縮小 10%（保留原大小 90%）。
- * 比例以各立繪既有的水平、垂直縮放為基準，並保持腳底中心的位置。
- * 「聚焦變化時間（幀）」預設 20；縮小、恢復大小與明暗共用此時間。
- * 換成他發言時，自動回到原大小與正常亮度；0 幀為立即切換。
- * \AA[N] 對全部角色套用未發言效果；\AA[R] 或 \AA[0] 恢復全部。
- * 關閉縮小開關時，維持前版即時變暗的行為。
- *
- * 【已登錄立繪下拉選單】
- * 在「立繪個別樣式」從 img/pictures/jima_tool 選擇 PNG 並設定樣式。
- * 圖片 ID 直接使用檔名，不含最後的 .png；不必另外輸入 ID。
- * 事件請選「顯示／切換立繪（已登錄清單）」。
- * 下拉選單只列出已登錄的圖片，並套用該筆縮放、原點與眨眼等設定。
- * 資料夾內未登錄的圖片不會自動加入；空白登錄列不列出。
- * 新增、移除或修改登錄後，逐層按確定，再 Ctrl+S 儲存專案。
- *
- * 【儲存後自動同步】
- * 編輯前開啟專案根目錄的 JIMA_StandingPictureSync.cmd。
- * 在工具中選擇專案根目錄並保持視窗開啟，儲存後約 1～2 秒更新選項。
- * 工具只讀取已儲存的登錄清單，不掃描圖片，也不修改個別樣式或專案參數。
- * 更新後到 MZ 插件管理器對本插件按右鍵「重新整理／Refresh」，
- * 再關閉並重新開啟插件命令參數視窗；仍是舊選項時請重開專案。
- * MZ 原生視窗的確定／關閉按鈕沒有供遊戲插件使用的編輯器回呼。
- * 因此以實際存檔為同步時機，不會讀取尚未儲存的修改。
- * 未開工具時，本機試玩啟動會補同步一次；之後仍需 MZ 重新讀取選項。
- * 試玩補同步限本機 NW.js 測試模式，正式遊戲與網頁遊戲不改寫檔案。
- * 首次改寫會備份插件為 Jima_StandingPicture.js.jima-registered-sync.bak。
- * 安裝時請先關閉舊版「圖片資料夾／清單同步」工具，避免互相改寫選項。
- *
- * 【舊座標設定轉換（v1.1.6）】
- * 尚未轉換舊座標的專案，請先本機試玩一次，再重新開啟專案與插件管理器。
- * 首次轉換會採用立繪登錄清單第一筆的舊座標，建立八個位置的共用座標。
- * 位置 5～8 初始分別複製舊位置 1～4 的座標，之後可獨立調整。
- * 同時保留舊進退場與層級設定，清理分類標題旁的舊結構文字。
- * 轉換前會備份 js/plugins.js 為 js/plugins.js.jima-shared-slots-v1.1.6.bak。
- * 只有本機試玩會轉換；正式遊戲與網頁版僅讀取設定，不改寫檔案。
- *
- * 【用插件指令安排對話】
- * 在事件的「插件命令」選擇「顯示／切換立繪（已登錄清單）」：
- * ・立繪圖片：從下拉選單選擇已登錄的圖片（檔名即 ID）。
- * ・顯示位置：選擇位置 1～8。
- * ・顯示立繪：開啟時顯示；關閉時只讓該位置退場。
- * ・此角色發言聚焦：開啟時此人與額外指定的位置明亮，未選的人變暗。
- * ・額外一起聚焦的位置：清單中逐筆選取其他位置；留空則只有本次呼叫的人聚焦。
- * ・對話結束後保留：開啟時關閉文字視窗後仍保留立繪。
- * ・播放動作：開啟後，執行下方選擇的動作。
- * 接著加入「顯示文字」；台詞可只填一般文字，不必重複輸入控制碼。
- * 每句台詞前都可加入一個插件指令，即使使用相同表情也可切換發言者。
- * 對話結束時可呼叫「結束立繪對話（全部退場）」。
- * 
- * 【位置與顯示層級】
- * 可同時顯示最多 8 個位置的立繪。
- * 位置編號由呼叫指令決定，並非角色在清單中的順序。
- * 每個位置都有獨立的水平、垂直座標；所有立繪在同一位置共用相同的定位點。
- * 位置 5～8 也能各自調整，不再連動位置 1～4。
- * 位置 2、4、6、8 會套用「偶數位置的左右翻轉」。
- * 展開外層位置 1～8，可調整水平座標、垂直座標、進退場效果與顯示層級。
- * 選「插入一般圖片之間」時，以「立繪插入層的圖片編號」區分前後。
- * 
- * 【發言聚焦與保留模式】
- * \FH[ON] 開啟保留模式，文字視窗關閉後立繪繼續顯示。
- * 保留模式中，沒有指定 \AA 的對話或指令會沿用上一次的明暗設定。
- * 因此可在插件指令指定發言者，下一個「顯示文字」只填台詞。
- * \AA[R] 或 \AA[0] 讓全部角色恢復明亮；\AA[N] 讓全部角色變暗。
- * \FH[OFF] 關閉保留模式，沿用原本的隱藏行為。
- * 
- * 【控制碼：可選用，不必背誦】
- * 在「顯示文字」或「執行控制碼（文字輸入）」使用：
- * \F1[立繪ID] ～ \F8[立繪ID]：將立繪顯示在指定位置。
- * 例如：\F1[Asai_1]；亦可用變數指定 ID：\F1[\V[1]]。
- * 前四個位置另可使用 \F、\FF、\FFF、\FFFF。
- * \M1[動作代碼] ～ \M8[動作代碼]：播放指定位置的動作。
- * 例如：\M2[jump]；前四個位置另可使用 \M、\MM、\MMM、\MMMM。
- * \AA[1] ～ \AA[8]：聚焦指定位置，其他位置變暗。
- * 前四個位置另可使用 \AA[F]、\AA[FF]、\AA[FFF]、\AA[FFFF]。
- * \AA[N]：全部變暗；\AA[R] 或 \AA[0]：全部恢復明亮。
- * \FH[ON]：開啟對話後保留；\FH[OFF]：關閉保留。
- * 範例：\F2[Shirasaki_1]\AA[2]\FH[ON]\M2[jump]
- * 控制碼中的 ON、OFF 與動作代碼須維持原寫法。
- * 
- * 【動作代碼】
- * yes：點頭一次；yesyes：點頭兩次。
- * no：左右搖晃；noslow：慢速左右搖晃。
- * jump：往上跳一下；jumpjump：連跳兩下。
- * shake：原地震動；shakeloop：持續震動。
- * jumploop：持續跳躍；noslowloop：持續慢速搖晃。
- * huwahuwa：輕微上下漂浮。
- * runleft：向左離場；runright：向右離場。
- * breathing：呼吸效果 1；breathing2：呼吸效果 2。
- * none：停止動作。
- * 只有明確呼叫該位置的動作才會重新播放，不會因其他角色說話而重播。
- * 持續型動作會持續進行，直到該位置被切換、退場或呼叫停止動作。
- * 
- * 【其他插件命令】
- * 立繪顯示開關：暫時隱藏或恢復全部立繪，預設開啟。
- * 立繪色調調整：調整紅、綠、藍與灰階強度；全部設為 0 恢復原色。
- * 
- * 【眨眼動畫】
- * 設定眨眼圖片後會自動播放；不使用時兩張圖片都留空。
- * 播放順序為：眨眼圖片 1 → 眨眼圖片 2 → 原立繪。
- * 只使用一張差分時，僅設定「眨眼圖片 1」。
- * 眨眼圖片的尺寸須與原立繪相同；使用眨眼時不透明度請設為 255。
- * 時間單位為影格，每影格約 1/60 秒。
- * 
- * 【相容與顯示說明】
- * 插件檔名、內部參數名稱、指令名稱、立繪 ID 與儲存值維持相容。
- * 編輯器部分值欄位仍可能顯示 true／false、jump 或其他內部代碼。
- * 這些是原本的設定資料，請使用中文選項編輯即可。
- * 
- * 【原作者使用規約】
- * ・不必標示著作權，也不必回報使用情況。
- * ・可用於商業與非商業作品，成人作品亦無使用限制。
- * ・可依遊戲需求修改。
- * ・禁止作為插件素材再散布，包括修改後的版本。
- * 原作者：Lulu's Church（ルルの教会）
- * 原版日期：2025/1/15；原版版本：2.7.0。
- * 規約網址：https://nine-yusha.com/plugin/
- * 
- *
- * @command showPictureGui
- * @text 顯示／切換立繪（已登錄清單）
- * @desc 從已登錄的個別樣式清單選擇立繪，設定位置、發言、保留與動作。
- *
- * @arg imageName
  * @text 立繪圖片（已登錄清單）
  * @desc 選項來自已儲存的立繪個別樣式；檔名即 ID。修改後請同步並重新整理插件。
  * @type select
  * @jimaPictureOptionsBegin
  * @option （維持此位置目前圖片；首次請選立繪）
- * @value @keep
+ * @value jima-keep-current
  * @option Asai_CloseEyes_30
  * @value jima-id:Asai_CloseEyes_30
  * @option Asai_Cold_30
@@ -1711,7 +1425,915 @@
  * @option 0_0_C_XD_V_30
  * @value jima-id:0_0_C_XD_V_30
  * @jimaPictureOptionsEnd
- * @default @keep
+ * @default jima-keep-current
+ *
+ * @param slot
+ * @text 顯示位置
+ * @desc 對應外層位置 1～8；所有立繪都使用所選位置的共用座標。
+ * @type select
+ * @option 位置 1
+ * @value 1
+ * @option 位置 2
+ * @value 2
+ * @option 位置 3
+ * @value 3
+ * @option 位置 4
+ * @value 4
+ * @option 位置 5
+ * @value 5
+ * @option 位置 6
+ * @value 6
+ * @option 位置 7
+ * @value 7
+ * @option 位置 8
+ * @value 8
+ * @default 1
+ *
+ * @param show
+ * @text 顯示立繪
+ * @desc 開啟時顯示或切換此位置的立繪；關閉時僅讓此位置退場，不執行其他欄位。
+ * @type boolean
+ * @on 開啟：顯示
+ * @off 關閉：此位置退場
+ * @default true
+ *
+ * @param focus
+ * @text 此角色發言聚焦
+ * @desc 開啟時此角色與額外指定位置明亮，未選的人變暗；關閉時全員明亮。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：此人與額外位置聚焦
+ * @off 關閉：全部明亮
+ * @default true
+ *
+ * @param extraFocusSlots
+ * @text 額外一起聚焦的位置
+ * @desc 此角色發言聚焦開啟時生效。逐筆選取其他已顯示的位置；留空維持單人聚焦，每次呼叫重新指定。
+ * @type select[]
+ * @option 位置 1
+ * @value 1
+ * @option 位置 2
+ * @value 2
+ * @option 位置 3
+ * @value 3
+ * @option 位置 4
+ * @value 4
+ * @option 位置 5
+ * @value 5
+ * @option 位置 6
+ * @value 6
+ * @option 位置 7
+ * @value 7
+ * @option 位置 8
+ * @value 8
+ * @default []
+ *
+ * @param hold
+ * @text 對話結束後保留
+ * @desc 開啟時關閉文字視窗後仍保留立繪；關閉時隨文字視窗退場。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：保留
+ * @off 關閉：隨文字視窗退場
+ * @default true
+ *
+ * @param exitBeforeShow
+ * @text 更換前先退場
+ * @desc 開啟時先讓此位置的舊立繪退場，再依插件設定的等待幀數顯示新立繪；換表情請關閉。
+ * @type boolean
+ * @on 開啟：先退場再進場
+ * @off 關閉：直接換圖
+ * @default false
+ *
+ * @param motionEnabled
+ * @text 播放動作
+ * @desc 開啟時播放下方選擇的動作；關閉時不播放。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：播放動作
+ * @off 關閉：不播放
+ * @default false
+ *
+ * @param motion
+ * @text 動作種類
+ * @desc 「播放動作」開啟時才會執行；一次選擇一種動作，且只操作所選位置。
+ * @type select
+ * @option 往上跳一下
+ * @value jump
+ * @option 連跳兩下
+ * @value jumpjump
+ * @option 原地震動
+ * @value shake
+ * @option 點頭一次
+ * @value yes
+ * @option 點頭兩次
+ * @value yesyes
+ * @option 左右搖晃
+ * @value no
+ * @option 慢速左右搖晃
+ * @value noslow
+ * @option 持續跳躍
+ * @value jumploop
+ * @option 持續震動
+ * @value shakeloop
+ * @option 持續慢速搖晃
+ * @value noslowloop
+ * @option 輕微上下漂浮
+ * @value huwahuwa
+ * @option 向左離場
+ * @value runleft
+ * @option 向右離場
+ * @value runright
+ * @option 呼吸效果 1
+ * @value breathing
+ * @option 呼吸效果 2
+ * @value breathing2
+ * @option 停止動作
+ * @value none
+ * @default jump
+ *
+ */
+
+/*~struct~standingCommandSettings:ja
+ * @param imageName
+ * @text 立繪圖片（已登錄清單）
+ * @desc 選項來自已儲存的立繪個別樣式；檔名即 ID。修改後請同步並重新整理插件。
+ * @type select
+ * @jimaPictureOptionsBegin
+ * @option （維持此位置目前圖片；首次請選立繪）
+ * @value jima-keep-current
+ * @option Asai_CloseEyes_30
+ * @value jima-id:Asai_CloseEyes_30
+ * @option Asai_Cold_30
+ * @value jima-id:Asai_Cold_30
+ * @option Shirasaki_Panic_30
+ * @value jima-id:Shirasaki_Panic_30
+ * @option Shirasaki_Smile_30
+ * @value jima-id:Shirasaki_Smile_30
+ * @option Asai_aLittleSurprise_30
+ * @value jima-id:Asai_aLittleSurprise_30
+ * @option Asai_Angry_30
+ * @value jima-id:Asai_Angry_30
+ * @option Asai_Confuse_30
+ * @value jima-id:Asai_Confuse_30
+ * @option asai_Defult_30
+ * @value jima-id:asai_Defult_30
+ * @option Asai_Defult02_30
+ * @value jima-id:Asai_Defult02_30
+ * @option Asai_Diffident_30
+ * @value jima-id:Asai_Diffident_30
+ * @option Asai_Hate_30
+ * @value jima-id:Asai_Hate_30
+ * @option Asai_Hurt_30
+ * @value jima-id:Asai_Hurt_30
+ * @option Asai_Identify_30
+ * @value jima-id:Asai_Identify_30
+ * @option Asai_LittleAngry_30
+ * @value jima-id:Asai_LittleAngry_30
+ * @option Asai_Mild_30
+ * @value jima-id:Asai_Mild_30
+ * @option Asai_PlayGame_30
+ * @value jima-id:Asai_PlayGame_30
+ * @option Asai_Proud_30
+ * @value jima-id:Asai_Proud_30
+ * @option Asai_Resignedly_30
+ * @value jima-id:Asai_Resignedly_30
+ * @option Asai_Scare_30
+ * @value jima-id:Asai_Scare_30
+ * @option Asai_Serious_30
+ * @value jima-id:Asai_Serious_30
+ * @option Asai_Smile_30
+ * @value jima-id:Asai_Smile_30
+ * @option Asai_Sneer_30
+ * @value jima-id:Asai_Sneer_30
+ * @option Asai_Stare_30
+ * @value jima-id:Asai_Stare_30
+ * @option Asai_Surprise_30
+ * @value jima-id:Asai_Surprise_30
+ * @option Asai_Think_30
+ * @value jima-id:Asai_Think_30
+ * @option Asai_Think02_30
+ * @value jima-id:Asai_Think02_30
+ * @option Asai_ThinkCloseEyes_30
+ * @value jima-id:Asai_ThinkCloseEyes_30
+ * @option Asai_YaCyatta_30
+ * @value jima-id:Asai_YaCyatta_30
+ * @option Shirasaki_BadLaugh_Weird_30
+ * @value jima-id:Shirasaki_BadLaugh_Weird_30
+ * @option Shirasaki_CloseEyes_30
+ * @value jima-id:Shirasaki_CloseEyes_30
+ * @option Shirasaki_CloseEyesSad_30
+ * @value jima-id:Shirasaki_CloseEyesSad_30
+ * @option Shirasaki_Cold_01_30
+ * @value jima-id:Shirasaki_Cold_01_30
+ * @option Shirasaki_Cold_30
+ * @value jima-id:Shirasaki_Cold_30
+ * @option Shirasaki_Confuse_30
+ * @value jima-id:Shirasaki_Confuse_30
+ * @option Shirasaki_Defult_02_30
+ * @value jima-id:Shirasaki_Defult_02_30
+ * @option Shirasaki_Defult_30
+ * @value jima-id:Shirasaki_Defult_30
+ * @option Shirasaki_Hand_30
+ * @value jima-id:Shirasaki_Hand_30
+ * @option Shirasaki_Sad_30
+ * @value jima-id:Shirasaki_Sad_30
+ * @option Shirasaki_Scare_30
+ * @value jima-id:Shirasaki_Scare_30
+ * @option Shirasaki_SeeDown_30
+ * @value jima-id:Shirasaki_SeeDown_30
+ * @option Shirasaki_SeeOtherWhere_30
+ * @value jima-id:Shirasaki_SeeOtherWhere_30
+ * @option Shirasaki_Serious_30
+ * @value jima-id:Shirasaki_Serious_30
+ * @option Shirasaki_SeriousCloseEyes_30
+ * @value jima-id:Shirasaki_SeriousCloseEyes_30
+ * @option Shirasaki_Smile_Cut_30
+ * @value jima-id:Shirasaki_Smile_Cut_30
+ * @option Shirasaki_Surprise_30
+ * @value jima-id:Shirasaki_Surprise_30
+ * @option Shirasaki_Talk_Weird_30
+ * @value jima-id:Shirasaki_Talk_Weird_30
+ * @option Shirasaki_Tender_Cut_30
+ * @value jima-id:Shirasaki_Tender_Cut_30
+ * @option Shirasaki_Think_30
+ * @value jima-id:Shirasaki_Think_30
+ * @option Shirasaki_TouchFace_Cut_30
+ * @value jima-id:Shirasaki_TouchFace_Cut_30
+ * @option Shirasaki_Troubled_30
+ * @value jima-id:Shirasaki_Troubled_30
+ * @option Shirasaki_VeryScare_30
+ * @value jima-id:Shirasaki_VeryScare_30
+ * @option Shirasaki_WillCry_30
+ * @value jima-id:Shirasaki_WillCry_30
+ * @option Shirasaki_WrySmile_30
+ * @value jima-id:Shirasaki_WrySmile_30
+ * @option Shirasaki_YaCyatta_30
+ * @value jima-id:Shirasaki_YaCyatta_30
+ * @option 0_0_C_Anyway_30
+ * @value jima-id:0_0_C_Anyway_30
+ * @option 0_0_C_BlackSmile_30
+ * @value jima-id:0_0_C_BlackSmile_30
+ * @option 0_0_C_CloseEyesFUFU_30
+ * @value jima-id:0_0_C_CloseEyesFUFU_30
+ * @option 0_0_C_CloseEyesSerious_30
+ * @value jima-id:0_0_C_CloseEyesSerious_30
+ * @option 0_0_C_Cute_30
+ * @value jima-id:0_0_C_Cute_30
+ * @option 0_0_C_Default_30
+ * @value jima-id:0_0_C_Default_30
+ * @option 0_0_C_HAHA_30
+ * @value jima-id:0_0_C_HAHA_30
+ * @option 0_0_C_HEHE_30
+ * @value jima-id:0_0_C_HEHE_30
+ * @option 0_0_C_Kirakira_30
+ * @value jima-id:0_0_C_Kirakira_30
+ * @option 0_0_C_NoHAHA_30
+ * @value jima-id:0_0_C_NoHAHA_30
+ * @option 0_0_C_Serious_30
+ * @value jima-id:0_0_C_Serious_30
+ * @option 0_0_C_SeriousHA_30
+ * @value jima-id:0_0_C_SeriousHA_30
+ * @option 0_0_C_Smile_30
+ * @value jima-id:0_0_C_Smile_30
+ * @option 0_0_C_Smile2_30
+ * @value jima-id:0_0_C_Smile2_30
+ * @option 0_0_C_SoWhat_30
+ * @value jima-id:0_0_C_SoWhat_30
+ * @option 0_0_C_Surprise_30
+ * @value jima-id:0_0_C_Surprise_30
+ * @option 0_0_C_Surprise2_30
+ * @value jima-id:0_0_C_Surprise2_30
+ * @option 0_0_C_Think_30
+ * @value jima-id:0_0_C_Think_30
+ * @option 0_0_C_Think2_30
+ * @value jima-id:0_0_C_Think2_30
+ * @option 0_0_C_XD_30
+ * @value jima-id:0_0_C_XD_30
+ * @option 0_0_C_XD_Good_30
+ * @value jima-id:0_0_C_XD_Good_30
+ * @option 0_0_C_XD_V_30
+ * @value jima-id:0_0_C_XD_V_30
+ * @jimaPictureOptionsEnd
+ * @default jima-keep-current
+ *
+ * @param slot
+ * @text 顯示位置
+ * @desc 對應外層位置 1～8；所有立繪都使用所選位置的共用座標。
+ * @type select
+ * @option 位置 1
+ * @value 1
+ * @option 位置 2
+ * @value 2
+ * @option 位置 3
+ * @value 3
+ * @option 位置 4
+ * @value 4
+ * @option 位置 5
+ * @value 5
+ * @option 位置 6
+ * @value 6
+ * @option 位置 7
+ * @value 7
+ * @option 位置 8
+ * @value 8
+ * @default 1
+ *
+ * @param show
+ * @text 顯示立繪
+ * @desc 開啟時顯示或切換此位置的立繪；關閉時僅讓此位置退場，不執行其他欄位。
+ * @type boolean
+ * @on 開啟：顯示
+ * @off 關閉：此位置退場
+ * @default true
+ *
+ * @param focus
+ * @text 此角色發言聚焦
+ * @desc 開啟時此角色與額外指定位置明亮，未選的人變暗；關閉時全員明亮。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：此人與額外位置聚焦
+ * @off 關閉：全部明亮
+ * @default true
+ *
+ * @param extraFocusSlots
+ * @text 額外一起聚焦的位置
+ * @desc 此角色發言聚焦開啟時生效。逐筆選取其他已顯示的位置；留空維持單人聚焦，每次呼叫重新指定。
+ * @type select[]
+ * @option 位置 1
+ * @value 1
+ * @option 位置 2
+ * @value 2
+ * @option 位置 3
+ * @value 3
+ * @option 位置 4
+ * @value 4
+ * @option 位置 5
+ * @value 5
+ * @option 位置 6
+ * @value 6
+ * @option 位置 7
+ * @value 7
+ * @option 位置 8
+ * @value 8
+ * @default []
+ *
+ * @param hold
+ * @text 對話結束後保留
+ * @desc 開啟時關閉文字視窗後仍保留立繪；關閉時隨文字視窗退場。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：保留
+ * @off 關閉：隨文字視窗退場
+ * @default true
+ *
+ * @param exitBeforeShow
+ * @text 更換前先退場
+ * @desc 開啟時先讓此位置的舊立繪退場，再依插件設定的等待幀數顯示新立繪；換表情請關閉。
+ * @type boolean
+ * @on 開啟：先退場再進場
+ * @off 關閉：直接換圖
+ * @default false
+ *
+ * @param motionEnabled
+ * @text 播放動作
+ * @desc 開啟時播放下方選擇的動作；關閉時不播放。顯示立繪時適用。
+ * @type boolean
+ * @on 開啟：播放動作
+ * @off 關閉：不播放
+ * @default false
+ *
+ * @param motion
+ * @text 動作種類
+ * @desc 「播放動作」開啟時才會執行；一次選擇一種動作，且只操作所選位置。
+ * @type select
+ * @option 往上跳一下
+ * @value jump
+ * @option 連跳兩下
+ * @value jumpjump
+ * @option 原地震動
+ * @value shake
+ * @option 點頭一次
+ * @value yes
+ * @option 點頭兩次
+ * @value yesyes
+ * @option 左右搖晃
+ * @value no
+ * @option 慢速左右搖晃
+ * @value noslow
+ * @option 持續跳躍
+ * @value jumploop
+ * @option 持續震動
+ * @value shakeloop
+ * @option 持續慢速搖晃
+ * @value noslowloop
+ * @option 輕微上下漂浮
+ * @value huwahuwa
+ * @option 向左離場
+ * @value runleft
+ * @option 向右離場
+ * @value runright
+ * @option 呼吸效果 1
+ * @value breathing
+ * @option 呼吸效果 2
+ * @value breathing2
+ * @option 停止動作
+ * @value none
+ * @default jump
+ *
+ */
+
+/*~struct~sPictures:
+ *
+ * @param imageName
+ * @text 立繪圖片（檔名即 ID）
+ * @desc 直接從 img/pictures/jima_tool 選 PNG，檔名自動作為 ID。
+ * @type file
+ * @dir img/pictures/jima_tool
+ *
+ * @param imageNameBlink
+ * @text 眨眼圖片 1（選填）
+ * @desc 選擇第一張眨眼差分圖片；尺寸須與立繪圖片相同，不使用眨眼時請留空。
+ * @dir img/pictures/jima_tool
+ * @type file
+ * @require 1
+ *
+ * @param imageNameBlink2
+ * @text 眨眼圖片 2（選填）
+ * @desc 選擇第二張眨眼差分圖片；尺寸須與立繪圖片相同，只用一張差分時請留空。
+ * @dir img/pictures/jima_tool
+ * @type file
+ * @require 1
+ *
+ * @param origin
+ * @text 定位原點
+ * @desc 指定座標對齊圖片的左上角或中心；放大、縮小時也會依此定位。
+ * @default 0
+ * @type select
+ * @option 左上角
+ * @value 0
+ * @option 圖片中心
+ * @value 1
+ *
+ * @param reverse
+ * @text 偶數位置的左右翻轉
+ * @desc 位置 2、4、6、8 使用此設定；選擇是否將立繪左右翻轉。
+ * @default 1
+ * @type select
+ * @option 維持原方向
+ * @value 1
+ * @option 左右翻轉
+ * @value -1
+ *
+ * @param useGlobalScale
+ * @text 是否共用外部縮放比
+ * @desc 是：使用外部的所有立繪共用縮放比；否：使用下方本筆水平、垂直縮放。個別數值不會被清除。
+ * @type boolean
+ * @on 是：使用共用縮放
+ * @off 否：使用本筆縮放
+ * @default true
+ *
+ * @param scaleX
+ * @text 水平縮放（％）
+ * @desc 是否共用外部縮放比設為否時生效；100 為原尺寸、150 為 1.5 倍、200 為 2 倍。
+ * @default 100
+ * @min -2000
+ * @max 2000
+ * @type number
+ *
+ * @param scaleY
+ * @text 垂直縮放（％）
+ * @desc 是否共用外部縮放比設為否時生效；100 為原尺寸、150 為 1.5 倍、200 為 2 倍。
+ * @default 100
+ * @min -2000
+ * @max 2000
+ * @type number
+ *
+ * @param opacity
+ * @text 不透明度
+ * @desc 範圍 0～255；0 完全透明、255 完全不透明。使用眨眼圖片時請設為 255。
+ * @default 255
+ * @type number
+ * @min 0
+ * @max 255
+ *
+ * @param blendMode
+ * @text 混合模式
+ * @desc 設定立繪與下方畫面的顏色混合方式；一般立繪使用「一般」。
+ * @default 0
+ * @type select
+ * @option 一般
+ * @value 0
+ * @option 加法混合（提亮）
+ * @value 1
+ * @option 色彩增值（變暗）
+ * @value 2
+ * @option 濾色（提亮）
+ * @value 3
+ */
+
+/*~struct~pictureSettings:
+ *
+ * @param transition
+ * @text 進退場效果
+ * @desc 設定此位置的立繪出現與消失時使用的效果。
+ * @type select
+ * @default 1
+ * @option 無效果（立即顯示／隱藏）
+ * @value 0
+ * @option 淡入／淡出
+ * @value 1
+ * @option 從左側滑入／往左側退場
+ * @value 2
+ * @option 從右側滑入／往右側退場
+ * @value 3
+ * @option 從下方滑入／往下方退場
+ * @value 4
+ * @option 從上方滑入／往上方退場
+ * @value 5
+ *
+ * @param priority
+ * @text 顯示層級
+ * @desc 設定立繪相對於一般圖片與視窗的前後順序。
+ * @type select
+ * @default inFrontOfPicture
+ * @option 一般圖片後方
+ * @value behindPicture
+ * @option 插入一般圖片之間
+ * @value betweenPictures
+ * @option 一般圖片前方
+ * @value inFrontOfPicture
+ * @option 視窗後方（畫面淡出時仍顯示）
+ * @value behindWindow
+ * @option 視窗前方（畫面淡出時仍顯示）
+ * @value inFrontOfWindow
+ */
+
+/*:ja
+ * @target MZ
+ * @plugindesc [Jima v1.7.1] 精簡立繪指令、多人聚焦、批次登錄與共用縮放。
+ * @author Jima
+ * @url https://nine-yusha.com/plugin-spicture/
+ *
+ * @jimaAssetsBegin
+ * @jimaAssetsEnd
+ *
+ * @help Jima_StandingPicture.js
+ * 
+ * Jima 立繪操作介面 v1.7.1（2026-11-22）
+ * 位置 1～8 各自設定共用的水平、垂直座標，所有立繪依呼叫位置定位。
+ * 沿用發言聚焦保留與動作僅影響指定位置的修正。
+ * 
+ * 【首次開啟結構參數修正 v1.7.1】
+ * 立繪設定的預設值與保留選項改用不含註解標記符號的值，避免預設資料被截斷。
+ * 新指令保留完整預設資料；既有完整設定與舊的保留值仍可執行。
+ * 舊事件若已儲存不完整的設定，請切換文字／結構後按確定儲存一次，或重新建立該指令。
+ * 本次修正不需執行 CMD；同步工具已一併修正，避免之後同步還原成舊值。
+ *
+ * 【精簡事件顯示 v1.7.0】
+ * 新增事件請選「顯示／切換立繪（精簡）」，再點開「立繪設定」。
+ * 立繪、位置、聚焦、額外聚焦、保留、先退場與動作全保留在這一層。
+ * 事件清單只顯示指令標題及一列設定；精簡顯示不需執行 CMD。
+ * 原有事件使用的舊版展開指令繼續支援，不會自動更換或重設原參數。
+ * 舊事件若也要精簡，請重新建立精簡指令，確認設定後再刪除原指令。
+ * 已登錄立繪的選項同步與即時預覽沿用既有方式。
+ *
+ * 【插件更名 v1.6.0】
+ * 本客製版作者顯示為 Jima，插件檔名為 Jima_StandingPicture.js。
+ * 以 Lulu's Church 的 LL_StandingPicture.js v2.7.0 為基礎修改，保留原始來源與規約註記。
+ * 儲存並關閉 MZ，覆蓋此包後，執行 JIMA_StandingPictureRegisterSync.cmd。
+ * 工具會保留原插件設定，改用新名稱，並更新地圖、公共事件、戰鬥事件的插件呼叫名稱。
+ * 只更換插件名稱，不變更立繪 ID、台詞或其他事件指令；完成後重開專案。
+ * 舊存檔的內部立繪欄位與舊呼叫別名會保留，不需重建事件。
+ * 請只啟用 Jima_StandingPicture，不要另行啟用原版 LL_StandingPicture。
+ *
+ * 【多人同時發言聚焦 v1.5.0】
+ * 在「顯示／切換立繪」開啟「此角色發言聚焦」，並於
+ * 「額外一起聚焦的位置」逐筆選取其他位置 1～8。
+ * 例如呼叫位置 3、額外選位置 1，位置 1 與 3 會同時恢復正常亮度與大小。
+ * 未選的位置會變暗；若已開啟未發言角色縮小，也會依設定縮小。
+ * 大小以共用／個別縮放為基準，時間沿用「聚焦變化時間（幀）」。
+ * 額外位置的立繪請先顯示並保留；此欄位只設定其聚焦，不切圖或重播動作。
+ * 每次呼叫都重新指定整組聚焦；下一句只由一人說話時，額外清單留空。
+ * 在保留模式下，後續純文字台詞會沿用這組聚焦，直到下一次指定。
+ * 此角色發言聚焦關閉時維持全員明亮，忽略額外清單；隱藏指令也忽略此欄位。
+ * 舊事件沒有此欄位時視為空清單，維持原本單人聚焦。
+ *
+ * 【批次登錄與共用縮放 v1.4.0】
+ * 儲存並關閉 MZ 與清單同步工具後，執行專案根目錄的
+ * JIMA_StandingPictureRegisterSync.cmd。
+ * 固定讀取 img/pictures/jima_tool 這一層的 PNG，不包含子資料夾。
+ * 同名圖片保留全部既有設定；新增圖使用預設值；缺圖的登錄會移除。
+ * 目錄不存在、沒有 PNG 或讀取失敗時停止，不改寫既有清單。
+ * 批次程式同時更新事件下拉選項，不建立備份，也不修改舊事件指向。
+ * 完成後重開專案；手動登錄的同步方式與即時預覽沿用原有工具。
+ *
+ * 「所有立繪共用縮放比（%）」預設 100，水平、垂直使用相同百分比。
+ * 每筆立繪的「是否共用外部縮放比」預設是，包含未填此欄位的舊立繪。
+ * 共用時直接使用外部數值，不與個別縮放相乘；原本個別數值仍保留。
+ * 改成否後，才使用該筆的水平、垂直縮放。
+ * 未發言縮小效果會在所選的共用／個別基準上套用，恢復時也回到此基準。
+ *
+ * 【換人進退場 v1.3.0】
+ * 在「顯示／切換立繪」開啟「更換前先退場」，目前位置有人時，
+ * 會讓原立繪退場，等待插件設定的幀數後，再讓新立繪進場。
+ * 「更換前退場等待（幀）」預設 20；事件會自動等待，不需另外加等待指令。
+ * 首次顯示或目前位置已完全隱藏時直接進場。
+ * 此開關由每句指令自行決定：換表情關閉，換角色時開啟。
+ * 即使圖片相同，開啟也會重新進場；不會用檔名猜測角色身分。
+ * 等待值控制新圖開始顯示的時機；原本進退場速度不變。
+ * 若設定少於原退場時間，會在等待結束時結束退場；0 為立即重新進場。
+ *
+ * 【未發言角色縮小 v1.3.0】
+ * 插件設定的「未發言角色縮小」預設關閉，開啟後套用縮放與明暗動畫。
+ * 「未發言縮小幅度（%）」預設 10，表示縮小 10%（保留原大小 90%）。
+ * 比例以各立繪既有的水平、垂直縮放為基準，並保持腳底中心的位置。
+ * 「聚焦變化時間（幀）」預設 20；縮小、恢復大小與明暗共用此時間。
+ * 換成他發言時，自動回到原大小與正常亮度；0 幀為立即切換。
+ * \AA[N] 對全部角色套用未發言效果；\AA[R] 或 \AA[0] 恢復全部。
+ * 關閉縮小開關時，維持前版即時變暗的行為。
+ *
+ * 【已登錄立繪下拉選單】
+ * 在「立繪個別樣式」從 img/pictures/jima_tool 選擇 PNG 並設定樣式。
+ * 圖片 ID 直接使用檔名，不含最後的 .png；不必另外輸入 ID。
+ * 事件請選「顯示／切換立繪（精簡）」，再開啟「立繪設定」。
+ * 下拉選單只列出已登錄的圖片，並套用該筆縮放、原點與眨眼等設定。
+ * 資料夾內未登錄的圖片不會自動加入；空白登錄列不列出。
+ * 新增、移除或修改登錄後，逐層按確定，再 Ctrl+S 儲存專案。
+ *
+ * 【儲存後自動同步】
+ * 編輯前開啟專案根目錄的 JIMA_StandingPictureSync.cmd。
+ * 在工具中選擇專案根目錄並保持視窗開啟，儲存後約 1～2 秒更新選項。
+ * 工具只讀取已儲存的登錄清單，不掃描圖片，也不修改個別樣式或專案參數。
+ * 更新後到 MZ 插件管理器對本插件按右鍵「重新整理／Refresh」，
+ * 再關閉並重新開啟插件命令參數視窗；仍是舊選項時請重開專案。
+ * MZ 原生視窗的確定／關閉按鈕沒有供遊戲插件使用的編輯器回呼。
+ * 因此以實際存檔為同步時機，不會讀取尚未儲存的修改。
+ * 未開工具時，本機試玩啟動會補同步一次；之後仍需 MZ 重新讀取選項。
+ * 試玩補同步限本機 NW.js 測試模式，正式遊戲與網頁遊戲不改寫檔案。
+ * 首次改寫會備份插件為 Jima_StandingPicture.js.jima-registered-sync.bak。
+ * 安裝時請先關閉舊版「圖片資料夾／清單同步」工具，避免互相改寫選項。
+ *
+ * 【舊座標設定轉換（v1.1.6）】
+ * 尚未轉換舊座標的專案，請先本機試玩一次，再重新開啟專案與插件管理器。
+ * 首次轉換會採用立繪登錄清單第一筆的舊座標，建立八個位置的共用座標。
+ * 位置 5～8 初始分別複製舊位置 1～4 的座標，之後可獨立調整。
+ * 同時保留舊進退場與層級設定，清理分類標題旁的舊結構文字。
+ * 轉換前會備份 js/plugins.js 為 js/plugins.js.jima-shared-slots-v1.1.6.bak。
+ * 只有本機試玩會轉換；正式遊戲與網頁版僅讀取設定，不改寫檔案。
+ *
+ * 【用插件指令安排對話】
+ * 在事件的「插件命令」選擇「顯示／切換立繪（精簡）」並開啟「立繪設定」：
+ * ・立繪圖片：從下拉選單選擇已登錄的圖片（檔名即 ID）。
+ * ・顯示位置：選擇位置 1～8。
+ * ・顯示立繪：開啟時顯示；關閉時只讓該位置退場。
+ * ・此角色發言聚焦：開啟時此人與額外指定的位置明亮，未選的人變暗。
+ * ・額外一起聚焦的位置：清單中逐筆選取其他位置；留空則只有本次呼叫的人聚焦。
+ * ・對話結束後保留：開啟時關閉文字視窗後仍保留立繪。
+ * ・播放動作：開啟後，執行下方選擇的動作。
+ * 接著加入「顯示文字」；台詞可只填一般文字，不必重複輸入控制碼。
+ * 每句台詞前都可加入一個插件指令，即使使用相同表情也可切換發言者。
+ * 對話結束時可呼叫「結束立繪對話（全部退場）」。
+ * 
+ * 【位置與顯示層級】
+ * 可同時顯示最多 8 個位置的立繪。
+ * 位置編號由呼叫指令決定，並非角色在清單中的順序。
+ * 每個位置都有獨立的水平、垂直座標；所有立繪在同一位置共用相同的定位點。
+ * 位置 5～8 也能各自調整，不再連動位置 1～4。
+ * 位置 2、4、6、8 會套用「偶數位置的左右翻轉」。
+ * 展開外層位置 1～8，可調整水平座標、垂直座標、進退場效果與顯示層級。
+ * 選「插入一般圖片之間」時，以「立繪插入層的圖片編號」區分前後。
+ * 
+ * 【發言聚焦與保留模式】
+ * \FH[ON] 開啟保留模式，文字視窗關閉後立繪繼續顯示。
+ * 保留模式中，沒有指定 \AA 的對話或指令會沿用上一次的明暗設定。
+ * 因此可在插件指令指定發言者，下一個「顯示文字」只填台詞。
+ * \AA[R] 或 \AA[0] 讓全部角色恢復明亮；\AA[N] 讓全部角色變暗。
+ * \FH[OFF] 關閉保留模式，沿用原本的隱藏行為。
+ * 
+ * 【控制碼：可選用，不必背誦】
+ * 在「顯示文字」或「執行控制碼（文字輸入）」使用：
+ * \F1[立繪ID] ～ \F8[立繪ID]：將立繪顯示在指定位置。
+ * 例如：\F1[Asai_1]；亦可用變數指定 ID：\F1[\V[1]]。
+ * 前四個位置另可使用 \F、\FF、\FFF、\FFFF。
+ * \M1[動作代碼] ～ \M8[動作代碼]：播放指定位置的動作。
+ * 例如：\M2[jump]；前四個位置另可使用 \M、\MM、\MMM、\MMMM。
+ * \AA[1] ～ \AA[8]：聚焦指定位置，其他位置變暗。
+ * 前四個位置另可使用 \AA[F]、\AA[FF]、\AA[FFF]、\AA[FFFF]。
+ * \AA[N]：全部變暗；\AA[R] 或 \AA[0]：全部恢復明亮。
+ * \FH[ON]：開啟對話後保留；\FH[OFF]：關閉保留。
+ * 範例：\F2[Shirasaki_1]\AA[2]\FH[ON]\M2[jump]
+ * 控制碼中的 ON、OFF 與動作代碼須維持原寫法。
+ * 
+ * 【動作代碼】
+ * yes：點頭一次；yesyes：點頭兩次。
+ * no：左右搖晃；noslow：慢速左右搖晃。
+ * jump：往上跳一下；jumpjump：連跳兩下。
+ * shake：原地震動；shakeloop：持續震動。
+ * jumploop：持續跳躍；noslowloop：持續慢速搖晃。
+ * huwahuwa：輕微上下漂浮。
+ * runleft：向左離場；runright：向右離場。
+ * breathing：呼吸效果 1；breathing2：呼吸效果 2。
+ * none：停止動作。
+ * 只有明確呼叫該位置的動作才會重新播放，不會因其他角色說話而重播。
+ * 持續型動作會持續進行，直到該位置被切換、退場或呼叫停止動作。
+ * 
+ * 【其他插件命令】
+ * 立繪顯示開關：暫時隱藏或恢復全部立繪，預設開啟。
+ * 立繪色調調整：調整紅、綠、藍與灰階強度；全部設為 0 恢復原色。
+ * 
+ * 【眨眼動畫】
+ * 設定眨眼圖片後會自動播放；不使用時兩張圖片都留空。
+ * 播放順序為：眨眼圖片 1 → 眨眼圖片 2 → 原立繪。
+ * 只使用一張差分時，僅設定「眨眼圖片 1」。
+ * 眨眼圖片的尺寸須與原立繪相同；使用眨眼時不透明度請設為 255。
+ * 時間單位為影格，每影格約 1/60 秒。
+ * 
+ * 【相容與顯示說明】
+ * 插件檔名、內部參數名稱、指令名稱、立繪 ID 與儲存值維持相容。
+ * 編輯器部分值欄位仍可能顯示 true／false、jump 或其他內部代碼。
+ * 這些是原本的設定資料，請使用中文選項編輯即可。
+ * 
+ * 【原作者使用規約】
+ * ・不必標示著作權，也不必回報使用情況。
+ * ・可用於商業與非商業作品，成人作品亦無使用限制。
+ * ・可依遊戲需求修改。
+ * ・禁止作為插件素材再散布，包括修改後的版本。
+ * 原作者：Lulu's Church（ルルの教会）
+ * 原版日期：2025/1/15；原版版本：2.7.0。
+ * 規約網址：https://nine-yusha.com/plugin/
+ * 
+ *
+ * @command showPictureCompactGui
+ * @text 顯示／切換立繪（精簡）
+ * @desc 點開「立繪設定」調整全部選項；事件清單只顯示指令及一列設定。
+ *
+ * @arg settings
+ * @text 立繪設定
+ * @desc 點開後選擇已登錄立繪、位置、聚焦、保留、先退場及動作。
+ * @type struct<standingCommandSettings>
+ * @default {"imageName":"jima-keep-current","slot":"1","show":"true","focus":"true","extraFocusSlots":"[]","hold":"true","exitBeforeShow":"false","motionEnabled":"false","motion":"jump"}
+ *
+ * @command showPictureGui
+ * @text 顯示／切換立繪（舊版展開）
+ * @desc 相容既有事件，維持原本逐項展開。新增事件建議使用「顯示／切換立繪（精簡）」。
+ *
+ * @arg imageName
+ * @text 立繪圖片（已登錄清單）
+ * @desc 選項來自已儲存的立繪個別樣式；檔名即 ID。修改後請同步並重新整理插件。
+ * @type select
+ * @jimaPictureOptionsBegin
+ * @option （維持此位置目前圖片；首次請選立繪）
+ * @value jima-keep-current
+ * @option Asai_CloseEyes_30
+ * @value jima-id:Asai_CloseEyes_30
+ * @option Asai_Cold_30
+ * @value jima-id:Asai_Cold_30
+ * @option Shirasaki_Panic_30
+ * @value jima-id:Shirasaki_Panic_30
+ * @option Shirasaki_Smile_30
+ * @value jima-id:Shirasaki_Smile_30
+ * @option Asai_aLittleSurprise_30
+ * @value jima-id:Asai_aLittleSurprise_30
+ * @option Asai_Angry_30
+ * @value jima-id:Asai_Angry_30
+ * @option Asai_Confuse_30
+ * @value jima-id:Asai_Confuse_30
+ * @option asai_Defult_30
+ * @value jima-id:asai_Defult_30
+ * @option Asai_Defult02_30
+ * @value jima-id:Asai_Defult02_30
+ * @option Asai_Diffident_30
+ * @value jima-id:Asai_Diffident_30
+ * @option Asai_Hate_30
+ * @value jima-id:Asai_Hate_30
+ * @option Asai_Hurt_30
+ * @value jima-id:Asai_Hurt_30
+ * @option Asai_Identify_30
+ * @value jima-id:Asai_Identify_30
+ * @option Asai_LittleAngry_30
+ * @value jima-id:Asai_LittleAngry_30
+ * @option Asai_Mild_30
+ * @value jima-id:Asai_Mild_30
+ * @option Asai_PlayGame_30
+ * @value jima-id:Asai_PlayGame_30
+ * @option Asai_Proud_30
+ * @value jima-id:Asai_Proud_30
+ * @option Asai_Resignedly_30
+ * @value jima-id:Asai_Resignedly_30
+ * @option Asai_Scare_30
+ * @value jima-id:Asai_Scare_30
+ * @option Asai_Serious_30
+ * @value jima-id:Asai_Serious_30
+ * @option Asai_Smile_30
+ * @value jima-id:Asai_Smile_30
+ * @option Asai_Sneer_30
+ * @value jima-id:Asai_Sneer_30
+ * @option Asai_Stare_30
+ * @value jima-id:Asai_Stare_30
+ * @option Asai_Surprise_30
+ * @value jima-id:Asai_Surprise_30
+ * @option Asai_Think_30
+ * @value jima-id:Asai_Think_30
+ * @option Asai_Think02_30
+ * @value jima-id:Asai_Think02_30
+ * @option Asai_ThinkCloseEyes_30
+ * @value jima-id:Asai_ThinkCloseEyes_30
+ * @option Asai_YaCyatta_30
+ * @value jima-id:Asai_YaCyatta_30
+ * @option Shirasaki_BadLaugh_Weird_30
+ * @value jima-id:Shirasaki_BadLaugh_Weird_30
+ * @option Shirasaki_CloseEyes_30
+ * @value jima-id:Shirasaki_CloseEyes_30
+ * @option Shirasaki_CloseEyesSad_30
+ * @value jima-id:Shirasaki_CloseEyesSad_30
+ * @option Shirasaki_Cold_01_30
+ * @value jima-id:Shirasaki_Cold_01_30
+ * @option Shirasaki_Cold_30
+ * @value jima-id:Shirasaki_Cold_30
+ * @option Shirasaki_Confuse_30
+ * @value jima-id:Shirasaki_Confuse_30
+ * @option Shirasaki_Defult_02_30
+ * @value jima-id:Shirasaki_Defult_02_30
+ * @option Shirasaki_Defult_30
+ * @value jima-id:Shirasaki_Defult_30
+ * @option Shirasaki_Hand_30
+ * @value jima-id:Shirasaki_Hand_30
+ * @option Shirasaki_Sad_30
+ * @value jima-id:Shirasaki_Sad_30
+ * @option Shirasaki_Scare_30
+ * @value jima-id:Shirasaki_Scare_30
+ * @option Shirasaki_SeeDown_30
+ * @value jima-id:Shirasaki_SeeDown_30
+ * @option Shirasaki_SeeOtherWhere_30
+ * @value jima-id:Shirasaki_SeeOtherWhere_30
+ * @option Shirasaki_Serious_30
+ * @value jima-id:Shirasaki_Serious_30
+ * @option Shirasaki_SeriousCloseEyes_30
+ * @value jima-id:Shirasaki_SeriousCloseEyes_30
+ * @option Shirasaki_Smile_Cut_30
+ * @value jima-id:Shirasaki_Smile_Cut_30
+ * @option Shirasaki_Surprise_30
+ * @value jima-id:Shirasaki_Surprise_30
+ * @option Shirasaki_Talk_Weird_30
+ * @value jima-id:Shirasaki_Talk_Weird_30
+ * @option Shirasaki_Tender_Cut_30
+ * @value jima-id:Shirasaki_Tender_Cut_30
+ * @option Shirasaki_Think_30
+ * @value jima-id:Shirasaki_Think_30
+ * @option Shirasaki_TouchFace_Cut_30
+ * @value jima-id:Shirasaki_TouchFace_Cut_30
+ * @option Shirasaki_Troubled_30
+ * @value jima-id:Shirasaki_Troubled_30
+ * @option Shirasaki_VeryScare_30
+ * @value jima-id:Shirasaki_VeryScare_30
+ * @option Shirasaki_WillCry_30
+ * @value jima-id:Shirasaki_WillCry_30
+ * @option Shirasaki_WrySmile_30
+ * @value jima-id:Shirasaki_WrySmile_30
+ * @option Shirasaki_YaCyatta_30
+ * @value jima-id:Shirasaki_YaCyatta_30
+ * @option 0_0_C_Anyway_30
+ * @value jima-id:0_0_C_Anyway_30
+ * @option 0_0_C_BlackSmile_30
+ * @value jima-id:0_0_C_BlackSmile_30
+ * @option 0_0_C_CloseEyesFUFU_30
+ * @value jima-id:0_0_C_CloseEyesFUFU_30
+ * @option 0_0_C_CloseEyesSerious_30
+ * @value jima-id:0_0_C_CloseEyesSerious_30
+ * @option 0_0_C_Cute_30
+ * @value jima-id:0_0_C_Cute_30
+ * @option 0_0_C_Default_30
+ * @value jima-id:0_0_C_Default_30
+ * @option 0_0_C_HAHA_30
+ * @value jima-id:0_0_C_HAHA_30
+ * @option 0_0_C_HEHE_30
+ * @value jima-id:0_0_C_HEHE_30
+ * @option 0_0_C_Kirakira_30
+ * @value jima-id:0_0_C_Kirakira_30
+ * @option 0_0_C_NoHAHA_30
+ * @value jima-id:0_0_C_NoHAHA_30
+ * @option 0_0_C_Serious_30
+ * @value jima-id:0_0_C_Serious_30
+ * @option 0_0_C_SeriousHA_30
+ * @value jima-id:0_0_C_SeriousHA_30
+ * @option 0_0_C_Smile_30
+ * @value jima-id:0_0_C_Smile_30
+ * @option 0_0_C_Smile2_30
+ * @value jima-id:0_0_C_Smile2_30
+ * @option 0_0_C_SoWhat_30
+ * @value jima-id:0_0_C_SoWhat_30
+ * @option 0_0_C_Surprise_30
+ * @value jima-id:0_0_C_Surprise_30
+ * @option 0_0_C_Surprise2_30
+ * @value jima-id:0_0_C_Surprise2_30
+ * @option 0_0_C_Think_30
+ * @value jima-id:0_0_C_Think_30
+ * @option 0_0_C_Think2_30
+ * @value jima-id:0_0_C_Think2_30
+ * @option 0_0_C_XD_30
+ * @value jima-id:0_0_C_XD_30
+ * @option 0_0_C_XD_Good_30
+ * @value jima-id:0_0_C_XD_Good_30
+ * @option 0_0_C_XD_V_30
+ * @value jima-id:0_0_C_XD_V_30
+ * @jimaPictureOptionsEnd
+ * @default jima-keep-current
  *
  * @arg slot
  * @text 顯示位置
@@ -2784,7 +3406,7 @@
   function patchPlugin(source, list) {
     var newline = source.indexOf("\r\n") >= 0 ? "\r\n" : "\n";
     var lines = [" * @jimaPictureOptionsBegin",
-      " * @option （維持此位置目前圖片；首次請選立繪）", " * @value @keep"];
+      " * @option （維持此位置目前圖片；首次請選立繪）", " * @value jima-keep-current"];
     list.forEach(function(item) {
       var label = item.id.replace(/\*\//g, "*／");
       lines.push(" * @option " + label, " * @value jima-id:" + encodeURIComponent(item.id));
@@ -2795,7 +3417,7 @@
       count++;
       return lines.join(newline);
     });
-    if (count !== 2) throw new Error("插件選項標記不完整，請先覆蓋此包 v1.2.2 插件；未改寫原檔。");
+    if (count !== 2 && count !== 4) throw new Error("插件選項標記不完整，請先覆蓋完整的 Jima 插件；未改寫原檔。");
     return updated;
   }
   async function handle(root, parts, create) {
@@ -3246,11 +3868,11 @@
 		if (!hold) current._jimaKeepOnNextMessage = true;
 	};
 
-	registerStandingCommand( "showPictureGui", function(args) {
+	const showRegisteredPicture = function(args, interpreter) {
 		showGuiPicture(args, current => {
 			if (args.imageName !== undefined) {
 				const chosen = String(args.imageName || "");
-				if (!chosen || chosen === "@keep") return current.sPicture;
+				if (!chosen || chosen === "jima-keep-current" || chosen === "@keep") return current.sPicture;
 				if (chosen.indexOf("jima-id:") === 0) {
 					const id = jimaCatalogApi.decode(chosen, "jima-id:");
 					const picture = sPictureLists.find(item => String(item.id) === id);
@@ -3269,7 +3891,35 @@
 			const chosen = jimaCatalogApi.decode(id, "jima-id:");
 			const legacy = jimaCatalogData.images.find(picture => picture.id === chosen);
 			return directPicture(normalizeJimaName(legacy ? legacy.imageName : chosen));
-		}, this);
+		}, interpreter);
+	};
+
+	// MZ stores a struct argument as one JSON string, keeping its event display to one data row.
+	const compactPictureDefaults = Object.freeze({"imageName":"jima-keep-current","slot":"1","show":"true","focus":"true","extraFocusSlots":"[]","hold":"true","exitBeforeShow":"false","motionEnabled":"false","motion":"jump"});
+	const compactPictureArgs = function(value) {
+		if (value === undefined || value === "") return Object.assign({}, compactPictureDefaults);
+		let settings = value;
+		if (typeof settings === "string") {
+			try {
+				settings = JSON.parse(settings);
+			} catch (error) {
+				throw new Error("Jima_StandingPicture：立繪設定格式錯誤，請重新開啟指令內的「立繪設定」。");
+			}
+		}
+		if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+			throw new Error("Jima_StandingPicture：立繪設定必須是設定結構，請重新開啟指令內的「立繪設定」。");
+		}
+		const args = Object.assign({}, compactPictureDefaults);
+		Object.keys(compactPictureDefaults).forEach(key => {
+			if (Object.prototype.hasOwnProperty.call(settings, key)) args[key] = settings[key];
+		});
+		return args;
+	};
+	registerStandingCommand("showPictureCompactGui", function(args) {
+		showRegisteredPicture(compactPictureArgs(args.settings), this);
+	});
+	registerStandingCommand("showPictureGui", function(args) {
+		showRegisteredPicture(args, this);
 	});
 
 	const directPicture = function(imageName) {

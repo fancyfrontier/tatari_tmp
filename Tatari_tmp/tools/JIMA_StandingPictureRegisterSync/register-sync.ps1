@@ -137,12 +137,13 @@ function New-JimaPlan([object[]]$RawRows, [string[]]$FileNames, $Defaults) {
 
 function Update-JimaOptions([string]$Source, [string[]]$Ids) {
     $pattern = '(?m)^ \* @jimaPictureOptionsBegin\r?\n[\s\S]*?^ \* @jimaPictureOptionsEnd(?=\r?$)'
-    if ([regex]::Matches($Source, $pattern).Count -ne 2) { throw "插件下拉選項標記不完整，未修改任何檔案。" }
+    $optionBlocks = [regex]::Matches($Source, $pattern).Count
+    if ($optionBlocks -ne 2 -and $optionBlocks -ne 4) { throw "插件下拉選項標記不完整，未修改任何檔案。" }
     $newline = if ($Source.Contains("`r`n")) { "`r`n" } else { "`n" }
     $lines = [Collections.Generic.List[string]]::new()
     $lines.Add(' * @jimaPictureOptionsBegin')
     $lines.Add(' * @option （維持此位置目前圖片；首次請選立繪）')
-    $lines.Add(' * @value @keep')
+    $lines.Add(' * @value jima-keep-current')
     foreach ($id in $Ids) {
         $encoded = [Uri]::EscapeDataString($id)
         foreach ($entry in @(@('%21', '!'), @('%27', "'"), @('%28', '('), @('%29', ')'), @('%2A', '*'))) {

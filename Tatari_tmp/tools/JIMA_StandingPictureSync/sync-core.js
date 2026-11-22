@@ -1,4 +1,4 @@
-/* JIMA registered-list sync v1.2.2. Project settings and image files are read-only. */
+/* JIMA registered-list sync v1.7.1 (legacy and compact command menus). Project settings and image files are read-only. */
 (function(root, factory) {
   var api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -55,7 +55,7 @@
   function patchPlugin(source, list) {
     var newline = source.indexOf("\r\n") >= 0 ? "\r\n" : "\n";
     var lines = [" * @jimaPictureOptionsBegin",
-      " * @option （維持此位置目前圖片；首次請選立繪）", " * @value @keep"];
+      " * @option （維持此位置目前圖片；首次請選立繪）", " * @value jima-keep-current"];
     list.forEach(function(item) {
       var label = item.id.replace(/\*\//g, "*／");
       lines.push(" * @option " + label, " * @value jima-id:" + encodeURIComponent(item.id));
@@ -66,7 +66,7 @@
       count++;
       return lines.join(newline);
     });
-    if (count !== 2) throw new Error("插件選項標記不完整，請先覆蓋此包 v1.2.2 插件；未改寫原檔。");
+    if (count !== 2 && count !== 4) throw new Error("插件選項標記不完整，請先覆蓋完整的 Jima 插件；未改寫原檔。");
     return updated;
   }
   async function handle(root, parts, create) {
